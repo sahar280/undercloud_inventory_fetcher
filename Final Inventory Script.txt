@@ -1,0 +1,57 @@
+#!/bin/bash
+source /home/stack/.bashrc
+rm Inventory.txt
+salt "*omput*" cmd.run 'if [[ -z "$(sudo ip a | grep inet | grep -w vlan1)" ]]; then echo "#N/A"; else sudo ip a | grep inet | grep -w vlan1; fi' > temp.txt
+grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}|#N/A' temp.txt > temp1.txt
+grep -i 'compute' temp.txt > temp2.txt
+paste -d ',' temp2.txt temp1.txt > Inventory.txt
+LC_ALL=C sort -t',' -k1 Inventory.txt > temp.txt && mv temp.txt Inventory.txt
+
+#Vlan1 IP
+salt "*omput*" cmd.run 'if [[ -z "$(sudo ipmitool lan print 1 | grep -w "IP Address" | grep -v Source)" ]]; then echo "#N/A"; else sudo ipmitool lan print 1 | grep -w "IP Address" | grep -v "Source"; fi' > temp.txt
+grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|#N/A' temp.txt > temp1.txt
+grep -i 'compute' temp.txt > temp2.txt
+paste -d ',' temp2.txt temp1.txt > output.txt
+LC_ALL=C sort -t',' -k1 output.txt > temp.txt && mv temp.txt output.txt
+awk -F ',' '{print $2}' output.txt > temp.txt && mv temp.txt output.txt
+paste -d ',' Inventory.txt output.txt > temp.txt && mv temp.txt Inventory.txt
+
+#Bridge-all IP
+salt "*omput*" cmd.run 'if [[ -z "$(sudo ip a | grep inet | grep -w "br-all")" ]]; then echo "#N/A"; else sudo ip a | grep inet | grep -w "br-all"; fi' > temp.txt
+grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}|#N/A' temp.txt > temp1.txt
+grep -i 'compute' temp.txt > temp2.txt
+paste -d ',' temp2.txt temp1.txt > output.txt
+LC_ALL=C sort -t',' -k1 output.txt > temp.txt && mv temp.txt output.txt
+awk -F ',' '{print $2}' output.txt > temp.txt && mv temp.txt output.txt
+paste -d ',' Inventory.txt output.txt > temp.txt && mv temp.txt Inventory.txt
+
+#BIOS INFO
+salt "*omput*" cmd.run 'if [[ -z "$(sudo dmidecode | grep -i bios -A 3 | grep "Version:")" ]]; then echo "#N/A"; else sudo dmidecode | grep -i bios -A 3 | grep "Version:"; fi' > temp.txt
+grep -oP '(?<=Version: )\S+|#N/A' temp.txt > temp1.txt
+grep -i 'compute' temp.txt > temp2.txt
+paste -d ',' temp2.txt temp1.txt > output.txt
+LC_ALL=C sort -t',' -k1 output.txt > temp.txt && mv temp.txt output.txt
+awk -F ',' '{print $2}' output.txt > temp.txt && mv temp.txt output.txt
+paste -d ',' Inventory.txt output.txt > temp.txt && mv temp.txt Inventory.txt
+
+#Firmware Version
+salt "*omput*" cmd.run 'if [[ -z "$(sudo ipmitool mc info | grep "Firmware Revision")" ]]; then echo "#N/A"; else sudo ipmitool mc info | grep "Firmware Revision"; fi' > temp.txt
+grep -oP '(?<=Firmware Revision         : )\S+|#N/A' temp.txt > temp1.txt
+grep -i 'compute' temp.txt > temp2.txt
+paste -d ',' temp2.txt temp1.txt > output.txt
+LC_ALL=C sort -t',' -k1 output.txt > temp.txt && mv temp.txt output.txt
+awk -F ',' '{print $2}' output.txt > temp.txt && mv temp.txt output.txt
+paste -d ',' Inventory.txt output.txt > temp.txt && mv temp.txt Inventory.txt
+
+salt "*omput*" cmd.run 'if [[ -z "$(sudo dmidecode | grep -i -A 4 "System Information" | grep -i serial)" ]]; then echo "#N/A"; else sudo dmidecode | grep -i -A 4 "System Information" | grep -i serial; fi' > temp.txt
+grep -oP '(?<=Serial Number: )\S+|#N/A' temp.txt > temp1.txt
+grep -i 'compute' temp.txt > temp2.txt
+paste -d ',' temp2.txt temp1.txt > output.txt
+LC_ALL=C sort -t',' -k1 output.txt > temp.txt && mv temp.txt output.txt
+awk -F ',' '{print $2}' output.txt > temp.txt && mv temp.txt output.txt
+paste -d ',' Inventory.txt output.txt > temp.txt && mv temp.txt Inventory.txt
+
+#Header
+echo "Computes,Vlan1 IP,IPMI IP,BR-all IP,BIOS,BMC,Serial Number" | cat - Inventory.txt > temp.txt && mv temp.txt Inventory.txt
+
+echo "check /home/stack/Inventory.txt"
