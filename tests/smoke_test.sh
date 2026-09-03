@@ -7,7 +7,7 @@ trap 'rm -rf -- "$TEST_DIR"' EXIT
 
 cp "$ROOT_DIR/tests/mock_salt.sh" "$TEST_DIR/salt"
 chmod +x "$TEST_DIR/salt"
-PATH="$TEST_DIR:$PATH" "$ROOT_DIR/undercloud_inventory.sh" --output "$TEST_DIR/inventory.csv"
+PATH="$TEST_DIR:$PATH" bash "$ROOT_DIR/undercloud_inventory.sh" --output "$TEST_DIR/inventory.csv"
 
 expected_header='Compute,VLAN IP,BMC IP,Bridge IP,BIOS,BMC Firmware,Serial Number'
 [[ $(head -n 1 "$TEST_DIR/inventory.csv") == "$expected_header" ]]
